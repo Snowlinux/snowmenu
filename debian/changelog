@@ -1,0 +1,18 @@
+snowmenu (1.0.2) glacier; urgency=low
+
+  * Changed menu.png
+
+ -- Lars Torben Kremer <lars@snowlinux.de>  Mon, 17 Dec 2012 18:05:41 +0100
+
+snowmenu (1.0.1) white; urgency=low
+
+  * Fixed version
+
+ -- Lars Torben Kremer <lars@snowlinux.de>  Sun, 16 Dec 2012 20:15:38 +0100
+
+snowmenu (1.0.0) white; urgency=low
+
+  * Forked from mintMenu <https://github.com/linuxmint/mintmenu>
+  * Initial release.
+
+ -- Lars Torben Kremer <lars@snowlinux.de>  Fri, 21 Sep 2012 15:39:33 +0200

@@ -1,0 +1,16 @@
+Source: snowmenu
+Section: admin
+Priority: optional
+Maintainer: Lars Torben Kremer <lars@snowlinux.de>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+
+Package: snowmenu
+Architecture: all
+Depends: python (>= 2.4), python (<< 3), python-gtk2, python-glade2, python-mate-menu, python-mate-desktop, python-corba, python-mate, python-xdg, snowlinux-common, snowmenu-keybinder
+Description: Advanced MATE menu
+ A simple and easy to use menu for the MATE desktop environment,
+ forked from mintmenu.
+ Features are searching for installed applications, managing them in
+ your favorites bar, locating files and folders on your filesystem,
+ and many more.
