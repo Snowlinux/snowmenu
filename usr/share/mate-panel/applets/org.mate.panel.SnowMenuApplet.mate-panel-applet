@@ -1,0 +1,12 @@
+[Applet Factory]
+Id=SnowMenuAppletFactory
+InProcess=false
+Location=/usr/lib/snowlinux/snowMenu/snowMenu.py
+Name=SnowMenu Applet Factory
+Description=Advanced Menu
+ 
+[SnowMenuApplet]
+Name=snowMenu
+Description=Advanced Menu
+Icon=/usr/lib/snowlinux/snowMenu/mint-logo.svg
+MateComponentId=OAFIID:MATE_SnowMenuApplet;
