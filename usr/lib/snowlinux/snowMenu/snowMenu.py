@@ -722,7 +722,7 @@ def quit_all(widget):
     gtk.main_quit()
     sys.exit(0)
 
-MatePanelApplet.Applet.factory_main("MintMenuAppletFactory", True,
+MatePanelApplet.Applet.factory_main("SnowMenuAppletFactory", True,
                                     MatePanelApplet.Applet.__gtype__,
                                     applet_factory, None)
 
