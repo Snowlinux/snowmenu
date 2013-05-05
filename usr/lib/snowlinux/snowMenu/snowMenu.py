@@ -5,6 +5,7 @@ gi.require_version("Gtk", "2.0")
  
 from gi.repository import Gtk, Gdk
 from gi.repository import MatePanelApplet
+from gi.repository import Gio
 
 try:
     import sys
@@ -50,8 +51,6 @@ gettext.install("snowmenu", "/usr/share/snowlinux/locale")
 NAME = _("Menu")
 PATH = os.path.abspath( os.path.dirname( sys.argv[0] ) )
 
-ICON = "/usr/lib/snowlinux/snowMenu/visualisation-logo.png"
-
 sys.path.append( os.path.join( PATH , "plugins") )
 
 windowManager = os.getenv("DESKTOP_SESSION")
@@ -60,22 +59,21 @@ if not windowManager:
 xdg.Config.setWindowManager( windowManager.upper() )
 
 # from easybuttons import iconManager
-# from easygconf import EasyGConf
 # from execute import *
-
-
 
 class MainWindow( object ):
     """This is the main class for the application"""
 
-    def __init__( self, toggleButton ):
+    def __init__( self, toggleButton, settings ):
+
+        self.settings = settings
 
         self.path = PATH
         sys.path.append( os.path.join( self.path, "plugins") )
 
         self.detect_desktop_environment()
 
-        self.icon = ICON
+        self.icon = "/usr/lib/snowlinux/snowMenu/visualisation-logo.png"
 
         self.toggle = toggleButton
         # Load glade file and extract widgets
@@ -99,8 +97,6 @@ class MainWindow( object ):
         dic = {"on_window1_destroy" : self.quit_cb}
         wTree.signal_autoconnect( dic )
 
-        self.gconf = EasyGConf( "/apps/snowMenu/" )
-
         self.getSetGconfEntries()
 
         self.tooltips = Gtk.Tooltips()
@@ -109,10 +105,12 @@ class MainWindow( object ):
         else:
             self.tooltips.disable()
 
-        self.PopulatePlugins()
-        self.gconf.notifyAdd( "plugins_list", self.RegenPlugins )
-        self.gconf.notifyAdd( "/apps/panel/global/tooltips_enabled", self.toggleTooltipsEnabled )
-        self.gconf.notifyAdd( "tooltips_enabled", self.toggleTooltipsEnabled )
+        self.PopulatePlugins();
+
+        self.settings.connect( "changed::plugins_list", self.RegenPlugins )
+
+        self.settings.connect( "changed::/apps/panel/global/tooltips_enabled", self.toggleTooltipsEnabled )
+        self.settings.connect( "changed::tooltips_enabled", self.toggleTooltipsEnabled ) 
 
     def quit_cb (self):
         Gtk.main_quit()
@@ -136,11 +134,13 @@ class MainWindow( object ):
             self.tooltips.disable()
 
     def getSetGconfEntries( self ):
-        self.pluginlist          = self.gconf.get( "list-string", "plugins_list",['applications'] )
         self.dottedfile          = os.path.join( self.path, "dotted.png")
         self.offset               = self.gconf.get( "int", "snowMenu_offset", 0 )
         self.enableTooltips       = self.gconf.get( "bool", "tooltips_enabled", True )
         self.globalEnableTooltips = self.gconf.get( "bool", "/apps/panel/global/tooltips_enabled", True )
+        self.pluginlist           = self.settings.get_strv( "plugins-list" )
+        mate_settings = Gio.Settings.new("org.mate.panel")
+        self.globalEnableTooltips = mate_settings.get_boolean( "tooltips-enabled" )
 
     def detect_desktop_environment (self):
         self.de = "mate"
@@ -396,29 +396,29 @@ class MainWindow( object ):
 
 class MenuWin( object ):
     def __init__( self, applet, iid ):
-        self.applet = applet
+        self.applet = applet        
+        self.settings = Gio.Settings.new_with_path("com.linuxmint.mintmenu", self.applet.get_preferences_path())
+               
+        self.settings.connect( "changed::applet_text", self.reloadSettings )
+        self.settings.connect( "changed::theme_name", self.changeTheme )
+        self.settings.connect( "changed::hot_key", self.reloadSettings )
+        self.settings.connect( "changed::applet_icon", self.reloadSettings )
+        self.settings.connect( "changed::hide-applet-icon", self.reloadSettings )
+        self.settings.connect( "changed::applet_icon_size", self.reloadSettings )
+        self.loadSettings()
 
-        self.gconf = EasyGConf( "/apps/snowMenu/" )
-        self.gconf.notifyAdd( "applet_text", self.gconfEntriesChanged )
-        self.gconf.notifyAdd( "theme_name", self.changeTheme )
-        self.gconf.notifyAdd( "hot_key", self.gconfEntriesChanged )
-        self.gconf.notifyAdd( "applet_icon", self.gconfEntriesChanged )
-        self.gconf.notifyAdd( "hide_applet_icon", self.gconfEntriesChanged )
-        self.gconf.notifyAdd( "applet_icon_size", self.gconfEntriesChanged )
-        self.getGconfEntries()
-
-        self.gconftheme = EasyGConf( "/desktop/mate/interface/" )
-        self.gconftheme.notifyAdd( "gtk_theme", self.changeTheme )
+        mate_settings = Gio.Settings.new("org.mate.interface")
+        mate_settings.connect( "changed::gtk-theme", self.changeTheme ) 
 
         self.createPanelButton()
 
-        self.applet.set_applet_flags( mateapplet.EXPAND_MINOR )
+        self.applet.set_flags( MatePanelApplet.AppletFlags.EXPAND_MINOR )
         self.applet.connect( "button-press-event", self.showMenu )
         self.applet.connect( "change-orient", self.changeOrientation )
         self.applet.connect( "change-background", self.changeBackground )
         self.applet.connect("enter-notify-event", self.enter_notify)
         self.applet.connect("leave-notify-event", self.leave_notify)
-        self.mainwin = MainWindow( self.button_box )
+        self.mainwin = MainWindow( self.button_box, self.settings )
         self.mainwin.window.connect( "map-event", lambda *args: self.applet.set_state( Gtk.StateType.SELECTED ) )
         self.mainwin.window.connect( "unmap-event", lambda *args: self.applet.set_state( Gtk.StateType.NORMAL ) )
         self.mainwin.window.connect( "size-allocate", lambda *args: self.positionMenu() )
@@ -464,7 +464,7 @@ class MenuWin( object ):
         self.button_icon.set_from_pixbuf(pixbuf)
 
     def createPanelButton( self ):
-        self.button_icon = Gtk.image_new_from_file( self.buttonIcon )
+        self.button_icon = Gtk.Image_new_from_file( self.buttonIcon )
         self.systemlabel = Gtk.Label(label= self.buttonText)
         if os.path.exists("/etc/snowlinux/info"):
             import commands
@@ -475,20 +475,20 @@ class MenuWin( object ):
             self.systemlabel.set_tooltip_text(tooltip)
             self.button_icon.set_tooltip_text(tooltip)
 
-        if self.applet.get_orient() == mateapplet.ORIENT_UP or self.applet.get_orient() == mateapplet.ORIENT_DOWN:
+        if self.applet.get_orient() == MatePanelApplet.AppletOrient.UP or self.applet.get_orient() == MatePanelApplet.AppletOrient.DOWN:
             self.button_box = Gtk.HBox()
-            self.button_box.pack_start( self.button_icon, False, False )
-            self.button_box.pack_start( self.systemlabel, False, False )
+            self.button_box.pack_start( self.button_icon, False, False, 0 )
+            self.button_box.pack_start( self.systemlabel, False, False, 0 )
 
             self.button_icon.set_padding( 5, 0 )
         # if we have a vertical panel
-        elif self.applet.get_orient() == mateapplet.ORIENT_LEFT:
+        elif self.applet.get_orient() == MatePanelApplet.AppletOrient.LEFT:
             self.button_box = Gtk.VBox()
             self.systemlabel.set_angle( 270 )
             self.button_box.pack_start( self.systemlabel, True, True, 0 )
             self.button_box.pack_start( self.button_icon, True, True, 0 )
             self.button_icon.set_padding( 5, 0 )
-        elif self.applet.get_orient() == mateapplet.ORIENT_RIGHT:
+        elif self.applet.get_orient() == MatePanelApplet.ORIENT_RIGHT:
             self.button_box = Gtk.VBox()
             self.systemlabel.set_angle( 90 )
             self.button_box.pack_start( self.button_icon, True, True, 0)
@@ -502,13 +502,13 @@ class MenuWin( object ):
         self.applet.add( self.button_box )
 
 
-    def getGconfEntries( self, *args, **kargs ):
-        self.hideIcon   =  self.gconf.get( "bool", "hide_applet_icon", False )
-        self.buttonText =  self.gconf.get( "string", "applet_text", "Menu" )
-        self.theme_name =  self.gconf.get( "string", "theme_name", "default" )
-        self.hotkeyText =  self.gconf.get( "string", "hot_key", "<Control>Super_L" )
-        self.buttonIcon =  self.gconf.get( "string", "applet_icon", ICON )
-        self.iconSize = self.gconf.get( "int", "applet_icon_size", 22 )
+    def loadSettings( self, *args, **kargs ):
+        self.hideIcon   =  self.settings.get_boolean( "hide-applet-icon" )
+        self.buttonText =  self.settings.get_string( "applet-text" )
+        self.theme_name =  self.settings.get_string( "theme-name" )
+        self.hotkeyText =  self.settings.get_string( "hot-key" )
+        self.buttonIcon =  self.settings.get_string( "applet-icon" )
+        self.iconSize = self.settings.get_int( "applet-icon-size" ) 
 
     def changeBackground( self, applet, type, color, pixmap ):
 
@@ -519,21 +519,22 @@ class MenuWin( object ):
         rc_style = Gtk.RcStyle()
         self.applet.modify_style(rc_style)
 
-        if mateapplet.COLOR_BACKGROUND == type:
+        if MatePanelApplet.AppletBackgroundType.COLOR_BACKGROUND == type:
             applet.modify_bg( Gtk.StateType.NORMAL, color )
-        elif mateapplet.PIXMAP_BACKGROUND == type:
+        elif MatePanelApplet.AppletBackgroundType.PIXMAP_BACKGROUND == type:
             style = applet.style
             style.bg_pixmap[ Gtk.StateType.NORMAL ] = pixmap
             applet.set_style( style )
 
     def changeTheme(self, *args):
-        self.gconfEntriesChanged()
+        self.reloadSettings()
         self.applyTheme()
         self.mainwin.RegenPlugins()
 
     def applyTheme(self):
         style_settings = Gtk.Settings.get_default()
-        desktop_theme = self.gconf.get( "string", '/desktop/mate/interface/gtk_theme', "")
+        mate_settings = Gio.Settings.new("org.mate.interface")
+        desktop_theme = mate_settings.get_string('gtk-theme')
         if self.theme_name == "default":
             style_settings.set_property("Gtk-theme-name", desktop_theme)
         else:
@@ -544,17 +545,17 @@ class MenuWin( object ):
 
     def changeOrientation( self, *args, **kargs ):
 
-        if self.applet.get_orient() == mateapplet.ORIENT_UP or self.applet.get_orient() == mateapplet.ORIENT_DOWN:
+        if self.applet.get_orient() == MatePanelApplet.AppletOrient.UP or self.applet.get_orient() == MatePanelApplet.AppletOrient.DOWN:
             tmpbox = Gtk.HBox()
             self.systemlabel.set_angle( 0 )
             self.button_box.reorder_child( self.button_icon, 0 )
             self.button_icon.set_padding( 5, 0 )
-        elif self.applet.get_orient() == mateapplet.ORIENT_LEFT:
+        elif self.applet.get_orient() == MatePanelApplet.AppletOrient.LEFT:
             tmpbox = Gtk.VBox()
             self.systemlabel.set_angle( 270 )
             self.button_box.reorder_child( self.button_icon, 1 )
             self.button_icon.set_padding( 0, 5 )
-        elif self.applet.get_orient() == mateapplet.ORIENT_RIGHT:
+        elif self.applet.get_orient() == MatePanelApplet.AppletOrient.RIGHT:
             tmpbox = Gtk.VBox()
             self.systemlabel.set_angle( 90 )
             self.button_box.reorder_child( self.button_icon, 0 )
@@ -599,20 +600,20 @@ class MenuWin( object ):
             self.button_icon.show()
         # This code calculates width and height for the button_box
         # and takes the orientation in account
-        if self.applet.get_orient() == mateapplet.ORIENT_UP or self.applet.get_orient() == mateapplet.ORIENT_DOWN:
-            if self.hideIcon:
-                self.applet.set_size_request( self.systemlabel.size_request()[0] + 2, -1 )
-            else:
-                self.applet.set_size_request( self.systemlabel.size_request()[0] + self.button_icon.size_request()[0] + 5, self.button_icon.size_request()[1] )
-        else:
-            if self.hideIcon:
-                self.applet.set_size_request( self.button_icon.size_request()[0], self.systemlabel.size_request()[1] + 2 )
-            else:
-                self.applet.set_size_request( self.button_icon.size_request()[0], self.systemlabel.size_request()[1] + self.button_icon.size_request()[1] + 5 )
+        #if self.applet.get_orient() == mateapplet.ORIENT_UP or self.applet.get_orient() == mateapplet.ORIENT_DOWN:
+        #    if self.hideIcon:
+        #        self.applet.set_size_request( self.systemlabel.size_request()[0] + 2, -1 )
+        #    else:
+        #        self.applet.set_size_request( self.systemlabel.size_request()[0] + self.button_icon.size_request()[0] + 5, self.button_icon.size_request()[1] )
+        #else:
+        #    if self.hideIcon:
+        #        self.applet.set_size_request( self.button_icon.size_request()[0], self.systemlabel.size_request()[1] + 2 )
+        #    else:
+        #        self.applet.set_size_request( self.button_icon.size_request()[0], self.systemlabel.size_request()[1] + self.button_icon.size_request()[1] + 5 )
 
-    def gconfEntriesChanged( self, *args ):
-        self.getGconfEntries()
-        self.updateButton()
+    def reloadSettings( self, *args ):
+        self.loadSettings()
+         self.updateButton()
 
     def showAboutDialog( self, uicomponent, verb ):
 
@@ -683,7 +684,7 @@ class MenuWin( object ):
         screenHeight = Gdk.Screen.height()
         screenWidth = Gdk.Screen.width()
 
-        if self.applet.get_orient() == mateapplet.ORIENT_UP or self.applet.get_orient() == mateapplet.ORIENT_DOWN:
+        if self.applet.get_orient() == MatePanelApplet.AppletOrient.UP or self.applet.get_orient() == MatePanelApplet.AppletOrient.DOWN:
             if entryX + ourWidth < screenWidth or  entryX + entryWidth / 2 < screenWidth / 2:
             # Align to the left of the entry
                 newX = entryX
