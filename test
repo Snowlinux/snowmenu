@@ -3,5 +3,4 @@
 sudo rm -rf /usr/lib/snowlinux/snowMenu
 sudo cp -R usr /
 sudo glib-compile-schemas /usr/share/glib-2.0/schemas 
-snowmenu
-
+/usr/lib/snowlinux/snowMenu/snowMenu.py

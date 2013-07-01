@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-28 12:14+0100\n"
+"POT-Creation-Date: 2013-06-27 23:17+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,533 +17,261 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: usr/lib/snowlinux/snowMenu/snowMenu.py:50
+#: usr/lib/snowlinux/snowMenu/snowMenu.py:51
 msgid "Menu"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/snowMenu.py:268
+#: usr/lib/snowlinux/snowMenu/snowMenu.py:191
 msgid "Couldn't load plugin:"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/snowMenu.py:341
+#: usr/lib/snowlinux/snowMenu/snowMenu.py:254
 msgid "Couldn't initialize plugin"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/snowMenu.py:558
+#: usr/lib/snowlinux/snowMenu/snowMenu.py:439
 msgid "Preferences"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/snowMenu.py:558
+#: usr/lib/snowlinux/snowMenu/snowMenu.py:439
 msgid "Edit menu"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/snowMenu.py:558
+#: usr/lib/snowlinux/snowMenu/snowMenu.py:439
 msgid "Reload plugins"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/snowMenu.py:558
+#: usr/lib/snowlinux/snowMenu/snowMenu.py:439
 msgid "About"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/snowMenu.py:756
+#: usr/lib/snowlinux/snowMenu/snowMenu.py:637
 msgid "Advanced Gnome Menu"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintRemove.py:48
-msgid "Please wait, this can take some time"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintRemove.py:50
-msgid "Application removed successfully"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintRemove.py:94
-msgid "No matching package found"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintRemove.py:95
-msgid "Do you want to remove this menu entry?"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintRemove.py:113
-#, python-format
-msgid "Remove %s?"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintRemove.py:116
-msgid "The following packages will be removed:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintRemove.py:119
-msgid "Packages to be removed"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:42
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:42
 msgid "Menu preferences"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:45
-msgid "Always start with favorites pane"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:46
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:45
 msgid "Show button icon"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:47
-msgid "Use custom colors"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:48
-msgid "Show recent documents plugin"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:49
-msgid "Show applications plugin"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:50
-msgid "Show system plugin"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:51
-msgid "Show places plugin"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:53
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:46
 msgid "Show application comments"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:54
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:47
 msgid "Show category icons"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:55
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:48
 msgid "Hover"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:56
-msgid "Search for packages to install"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:57
-msgid "Swap name and generic name"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:59
-msgid "Border width:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:60
-msgid "pixels"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:62
-msgid "Opacity:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:65
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:50
 msgid "Button text:"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:66
-msgid "Options"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:67
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:240
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:51
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:189
 msgid "Applications"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:69
-msgid "Theme"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:70
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:237
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:238
-msgid "Favorites"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:71
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:52
 msgid "Main button"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:73
-msgid "Background:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:74
-msgid "Headings:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:75
-msgid "Borders:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:76
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:53
 msgid "Theme:"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:80
-msgid "Number of columns:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:81
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:82
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:83
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:84
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:54
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:55
 msgid "Icon size:"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:85
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:56
 msgid "Hover delay (ms):"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:86
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:57
 msgid "Button icon:"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:87
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:58
 msgid "Search command:"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:89
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:40
-msgid "Places"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:90
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:102
-msgid "Allow Scrollbar"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:91
-msgid "Show GTK Bookmarks"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:92
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:103
-msgid "Height:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:93
-msgid "Toggle Default Places:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:94
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:148
-msgid "Computer"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:95
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:158
-msgid "Home Folder"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:96
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:171
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:173
-msgid "Network"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:97
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:196
-msgid "Desktop"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:98
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:206
-msgid "Trash"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:99
-msgid "Custom Places:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:101
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:37
-msgid "System"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:104
-msgid "Toggle Default Items:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:105
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:133
-msgid "Software Manager"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:106
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:140
-msgid "Package Manager"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:107
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:147
-msgid "Control Center"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:108
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:157
-msgid "Terminal"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:109
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:174
-msgid "Lock Screen"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:110
-msgid "Log Out"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:111
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:191
-msgid "Quit"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:113
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:60
 msgid "Edit Place"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:114
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:61
 msgid "New Place"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:115
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:62
 msgid "Select a folder"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:117
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:64
 msgid "Keyboard shortcut:"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:150
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:80
 msgid "Images"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:267
-msgid "Name"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:268
-msgid "Path"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:283
+#: usr/lib/snowlinux/snowMenu/snowMenuConfig.py:118
 msgid "Desktop theme"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:421
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:455
-msgid "Name:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:422
-#: usr/lib/snowlinux/snowMenu/mintMenuConfig.py:456
-msgid "Path:"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/recent.py:37
-msgid "Recent documents"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:235
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:186
 msgid "Search:"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:239
-msgid "All applications"
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:188
+msgid "Favorites"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:597
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:504
 #, python-format
 msgid "Search Google for %s"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:604
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:511
 #, python-format
 msgid "Search Wikipedia for %s"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:620
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:527
 #, python-format
 msgid "Lookup %s in Dictionary"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:627
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:534
 #, python-format
 msgid "Search Computer for %s"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:710
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:765
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:604
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:659
 #, python-format
 msgid "Install package '%s'"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:872
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:940
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:765
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:823
 msgid "Add to desktop"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:873
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:941
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:766
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:824
 msgid "Add to panel"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:875
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:922
-msgid "Insert space"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:876
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:923
-msgid "Insert separator"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:878
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:944
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:768
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:827
 msgid "Launch when I log in"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:880
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:946
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:770
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:829
 msgid "Launch"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:881
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:771
 msgid "Remove from favorites"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:883
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:950
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:773
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:833
 msgid "Edit properties"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:921
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:808
 msgid "Remove"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:943
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:809
+msgid "Insert space"
+msgstr ""
+
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:810
+msgid "Insert separator"
+msgstr ""
+
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:826
 msgid "Show in my favorites"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:947
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:830
 msgid "Uninstall"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:948
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:831
 msgid "Delete from menu"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1004
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:885
 msgid "Search Google"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1011
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:892
 msgid "Search Wikipedia"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1021
-msgid "Lookup Dictionary"
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:902
+msgid "Lookup Dictionnary"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1028
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:909
 msgid "Search Computer"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1038
-msgid "Find Software"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1045
-msgid "Find Tutorials"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1052
-msgid "Find Hardware"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1059
-msgid "Find Ideas"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1066
-msgid "Find Users"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1540
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1350
 msgid ""
 "Couldn't save favorites. Check if you have write access to ~/.snowlinux/"
 "snowMenu"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1720
-msgid "All"
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1457
+msgid "Home Folder"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1720
-msgid "Show all applications"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:137
-msgid "Browse and install available software"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:144
-msgid "Install, remove and upgrade software packages"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:154
-msgid "Configure your system"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:164
-msgid "Use the command line"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:167
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:184
-msgid "Logout"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:171
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:188
-msgid "Log out or switch user"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:181
-msgid "Requires password to unlock"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/system_management.py:195
-msgid "Shutdown, restart, suspend or hibernate"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:155
-msgid ""
-"Browse all local and remote disks and folders accessible from this computer"
-msgstr ""
-
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:165
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1460
 msgid "Open your personal folder"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:180
-msgid "Browse bookmarked and local network locations"
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1466
+msgid "Lock Screen"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:203
-msgid "Browse items placed on the desktop"
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1469
+msgid "Requires password to unlock"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:217
-msgid "Browse deleted files"
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1475
+msgid "Logout"
 msgstr ""
 
-#: usr/lib/snowlinux/snowMenu/plugins/places.py:264
-msgid "Empty trash"
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1478
+msgid "Log out or switch user"
+msgstr ""
+
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1484
+msgid "Quit"
+msgstr ""
+
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1487
+msgid "Shutdown, restart, suspend or hibernate"
+msgstr ""
+
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1572
+msgid "All"
+msgstr ""
+
+#: usr/lib/snowlinux/snowMenu/plugins/applications.py:1572
+msgid "Show all applications"
 msgstr ""

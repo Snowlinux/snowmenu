@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-import gtk
-import pango
-import matedesktop
-import gobject
+from gi.repository import Gtk, GdkPixbuf, Gdk, GLib, GObject
+import Pango
+# import matedesktop
 import os.path
 import shutil
 import re
@@ -12,6 +11,10 @@ import xdg.DesktopEntry
 import xdg.Menu
 from filemonitor import monitor as filemonitor
 import glib
+import ctypes
+from ctypes import *
+
+gtk = CDLL("libgtk-x11-2.0.so.0")
 
 
 class IconManager(gobject.GObject):
@@ -54,52 +57,45 @@ class IconManager(gobject.GObject):
             return None
 
         try:
+            iconFileName = ""
+            canSetByName = True
             #[ iconWidth, iconHeight ] = self.getIconSize( iconSize )
             if iconSize <= 0:
                 return None
-
-            if iconName in self.cache and iconSize in self.cache[iconName]:
-                iconFileName = self.cache[iconName][iconSize]
             elif os.path.isabs( iconName ):
                 iconFileName = iconName
+                canSetByName = False
             else:
                 if iconName[-4:] in [".png", ".xpm", ".svg", ".gif"]:
                     realIconName = iconName[:-4]
                 else:
                     realIconName = iconName
-                tmp = None
-                for theme in self.themes:
-                    if theme.has_icon( realIconName ):
-                        tmp = theme.lookup_icon( realIconName, iconSize, 0 )
-                        if tmp:
+                if iconFileName and not canSetByName and os.path.exists( iconFileName ):
+                    icon = GdkPixbuf.Pixbuf.new_from_file_at_size( iconFileName, iconSize, iconSize )
+                    # if the actual icon size is to far from the desired size resize it
+                    if icon and (( icon.get_width() - iconSize ) > 5 or ( icon.get_height() - iconSize ) > 5):
+                        if icon.get_width() > icon.get_height():
+                            newIcon = icon.scale_simple( iconSize, icon.get_height() * iconSize / icon.get_width(), GdkPixbuf.InterpType.BILINEAR )
+                        else:
+                            newIcon = icon.scale_simple( icon.get_width() * iconSize / icon.get_height(), iconSize, GdkPixbuf.InterpType.BILINEAR )
+                        del icon
+                        icon = newIcon
+                    image = Gtk.Image.new_from_pixbuf(icon)
+                elif canSetByName:
+                    image = Gtk.Image()
+                    icon_found = False
+                    for theme in self.themes:
+                        if theme.has_icon( realIconName ):
+                            icon_found = True
                             break
-
-                if tmp:
-                    iconFileName = tmp.get_filename()
+                    if icon_found:
+                        image.set_from_icon_name(realIconName, Gtk.IconSize.DND)
+                        image.set_pixel_size(iconSize)
+                    else:
+                        image = None
                 else:
-                    iconFileName = ""
-
-            if iconFileName and os.path.exists( iconFileName ):
-                icon = gtk.gdk.pixbuf_new_from_file_at_size( iconFileName, iconSize, iconSize )
-            else:
-                icon = None
-
-
-            # if the actual icon size is to far from the desired size resize it
-            if icon and (( icon.get_width() - iconSize ) > 5 or ( icon.get_height() - iconSize ) > 5):
-                if icon.get_width() > icon.get_height():
-                    newIcon = icon.scale_simple( iconSize, icon.get_height() * iconSize / icon.get_width(), gtk.gdk.INTERP_BILINEAR )
-                else:
-                    newIcon = icon.scale_simple( icon.get_width() * iconSize / icon.get_height(), iconSize, gtk.gdk.INTERP_BILINEAR )
-                del icon
-                icon = newIcon
-
-            if iconName in self.cache:
-                self.cache[iconName][iconSize] = iconFileName
-            else:
-                self.cache[iconName] = { iconSize : iconFileName }
-
-            return icon
+                    image = None
+            return image
         except Exception, e:
             print "Exception " + e.__class__.__name__ + ": " + e.message
             return None
@@ -130,13 +126,14 @@ class easyButton( gtk.Button ):
         self.buttonImage = gtk.Image()
         icon = self.getIcon( self.iconSize )
         if icon:
-            self.buttonImage.set_from_pixbuf( icon )
-            del icon
+            self.buttonImage = icon
         else:
             #[ iW, iH ] = iconManager.getIconSize( self.iconSize )
             self.buttonImage.set_size_request( self.iconSize, self.iconSize  )
-        self.buttonImage.show()
-        HBox1.pack_start( self.buttonImage, False, False, 5 )
+        self.image_box = Gtk.HBox()
+        self.image_box.pack_start(self.buttonImage, False, False, 5)
+        self.image_box.show_all()
+        HBox1.pack_start( self.image_box, False, False, 0 )
 
         if labels:
             for label in labels:
@@ -173,7 +170,7 @@ class easyButton( gtk.Button ):
 
     def addLabel( self, text, styles = None ):
         label = gtk.Label()
-        if "<b>" in text:
+        if "<b>" in text or "<span" in text:
             label.set_markup(text) # don't remove our pango
         else:
             label.set_markup(glib.markup_escape_text(text))
@@ -195,7 +192,7 @@ class easyButton( gtk.Button ):
             return None
 
         icon = iconManager.getIcon( self.iconName, iconSize )
-        if not icon:
+        if icon is None:
             icon = iconManager.getIcon( "application-default-icon", iconSize )
 
         return icon
@@ -210,11 +207,11 @@ class easyButton( gtk.Button ):
 
     def iconChanged( self ):
         icon = self.getIcon( self.iconSize )
-        self.buttonImage.clear()
+        self.buttonImage.destroy()
         if icon:
-            self.buttonImage.set_from_pixbuf( icon )
-            self.buttonImage.set_size_request( -1, -1 )
-            del icon
+            self.buttonImage = icon
+            self.image_box.pack_start(self.buttonImage, False, False, 5)
+            self.image_box.show_all()
         else:
             #[iW, iH ] = iconManager.getIconSize( self.iconSize )
             self.buttonImage.set_size_request( self.iconSize, self.iconSize  )
@@ -222,14 +219,19 @@ class easyButton( gtk.Button ):
     def setIconSize( self, size ):
         self.iconSize = size
         icon = self.getIcon( self.iconSize )
-        self.buttonImage.clear()
+        self.buttonImage.destroy()
         if icon:
-            self.buttonImage.set_from_pixbuf( icon )
-            self.buttonImage.set_size_request( -1, -1 )
-            del icon
+            self.buttonImage = icon
+            self.image_box.pack_start(self.buttonImage, False, False, 5)
+            self.image_box.show_all()
         elif self.iconSize:
             #[ iW, iH ] = iconManager.getIconSize( self.iconSize )
             self.buttonImage.set_size_request( self.iconSize, self.iconSize  )
+
+class TargetEntry(Structure):
+    _fields_ = [("target", c_char_p),
+                ("flags", c_int),
+                ("info", c_int)]
 
 class ApplicationLauncher( easyButton ):
 
@@ -256,19 +258,27 @@ class ApplicationLauncher( easyButton ):
 
         base = os.path.basename( self.desktopFile )
         for dir in self.appDirs:
-            self.desktopEntryMonitors.append( filemonitor.addMonitor( os.path.join(dir, base) , self.onDesktopEntryFileChanged ) )
+            self.desktopEntryMonitors.append( filemonitor.addMonitor( os.path.join(dir, base) , self.desktopEntryFileChangedCallback ) ))
 
         easyButton.__init__( self, self.appIconName, iconSize )
         self.setupLabels()
 
         # Drag and Drop
-        self.connectSelf( "drag_data_get", self.dragDataGet )
-        self.drag_source_set( gtk.gdk.BUTTON1_MASK  , [ ( "text/plain", 0, 100 ), ( "text/uri-list", 0, 101 ) ], gtk.gdk.ACTION_COPY )
+        self.connectSelf( "drag-data-get", self.dragDataGet )
+        array = TargetEntry * 2
+        targets = array(( "text/plain", 0, 100 ), ( "text/uri-list", 0, 101 ))
+        gtk.gtk_drag_source_set(hash(self), Gdk.ModifierType.BUTTON1_MASK, targets, 2, Gdk.DragAction.COPY)
 
-        icon = self.getIcon( gtk.ICON_SIZE_DND )
+        icon = self.getIcon( Gtk.IconSize.DND )
         if icon:
-            self.drag_source_set_icon_pixbuf( icon )
-            del icon
+            if icon.get_storage_type() == Gtk.ImageType.PIXBUF:
+                pb = icon.get_pixbuf()
+                gtk.gtk_drag_source_set_icon_pixbuf( hash(self), hash(pb) )
+                del icon
+            else:
+                if self.iconName:
+                    c = c_char_p(self.iconName)
+                    gtk.gtk_drag_source_set_icon_name( hash(self), c)
 
         self.connectSelf( "focus-in-event", self.onFocusIn )
         self.connectSelf( "focus-out-event", self.onFocusOut )
@@ -279,10 +289,10 @@ class ApplicationLauncher( easyButton ):
 
     def loadDesktopEntry( self, desktopItem ):
         try:
-            self.appName = desktopItem.getName()
-            self.appGenericName = desktopItem.getGenericName()
-            self.appComment = desktopItem.getComment()
-            self.appExec = desktopItem.getExec()
+            self.appName = self.strip_accents(desktopItem.getName())
+            self.appGenericName = self.strip_accents(desktopItem.getGenericName())
+            self.appComment = self.strip_accents(desktopItem.getComment())
+            self.appExec = self.strip_accents(desktopItem.getExec())
             self.appIconName = desktopItem.getIcon()
             self.appCategories = desktopItem.getCategories()
             self.appGnomeDocPath = desktopItem.get( "X-MATE-DocPath" ) or ""
@@ -299,8 +309,8 @@ class ApplicationLauncher( easyButton ):
             self.startupFilePath = os.path.join( os.path.expanduser("~"), ".config", "autostart", basename )
             if self.startupMonitorId:
                 filemonitor.removeMonitor( self.startupMonitorId  )
-            self.startupMonitorId = filemonitor.addMonitor( self.startupFilePath, self.startupFileChanged )
-            self.inStartup = os.path.exists( self.startupFilePath )
+            if os.path.exists (self.startupFilePath):
+                self.startupMonitorId = filemonitor.addMonitor( self.startupFilePath, self.startupFileChanged )
 
         except Exception, e:
             print e
@@ -328,10 +338,10 @@ class ApplicationLauncher( easyButton ):
 
     def filterText( self, text ):
         keywords = text.lower().split()
-        appName = self.strip_accents(self.appName.lower())
-        appGenericName = self.strip_accents(self.appGenericName.lower())
-        appComment = self.strip_accents(self.appComment.lower())
-        appExec = self.strip_accents(self.appExec.lower())
+        appName = self.appName.lower()
+        appGenericName = self.appGenericName.lower()
+        appComment = self.appComment.lower()
+        appExec = self.appExec.lower()
         for keyword in keywords:
             keyw = self.strip_accents(keyword)
             if keyw != "" and appName.find( keyw ) == -1 and appGenericName.find( keyw ) == -1 and appComment.find( keyw ) == -1 and appExec.find( keyw ) == -1:
@@ -343,7 +353,12 @@ class ApplicationLauncher( easyButton ):
 
     def strip_accents(self, string):
         import unicodedata
-        return unicodedata.normalize('NFKD', unicode(string)).encode('UTF8', 'ignore')
+        try:
+            value = unicodedata.normalize('NFKD', unicode(string)).encode('UTF8', 'ignore')
+        except:
+            value = string
+
+        return value
 
 
     def getTooltip( self ):
@@ -376,10 +391,16 @@ class ApplicationLauncher( easyButton ):
     def iconChanged( self ):
         easyButton.iconChanged( self )
 
-        icon = self.getIcon( gtk.ICON_SIZE_DND )
+        icon = self.getIcon( Gtk.IconSize.DND )
         if icon:
-            self.drag_source_set_icon_pixbuf( icon )
-            del icon
+            if icon.get_storage_type() == Gtk.ImageType.PIXBUF:
+                pb = icon.get_pixbuf()
+                gtk.gtk_drag_source_set_icon_pixbuf( hash(self), hash(pb) )
+                del icon
+            else:
+                if self.iconName:
+                    c = c_char_p(self.iconName)
+                    gtk.gtk_drag_source_set_icon_name( hash(self), c)
 
     def startupFileChanged( self, *args ):
         self.inStartup = os.path.exists( self.startupFilePath )
@@ -425,12 +446,15 @@ class ApplicationLauncher( easyButton ):
         for id in self.desktopEntryMonitors:
             filemonitor.removeMonitor( id )
 
+    def desktopEntryFileChangedCallback (self):
+        GLib.timeout_add(200, self.onDesktopEntryFileChanged)
+
     def onDesktopEntryFileChanged( self ):
         exists = False
         base = os.path.basename( self.desktopFile )
         for dir in self.appDirs:
             if os.path.exists( os.path.join( dir, base ) ):
-                print os.path.join( dir, base ), self.desktopFile
+                # print os.path.join( dir, base ), self.desktopFile
                 self.loadDesktopEntry( xdg.DesktopEntry.DesktopEntry( os.path.join( dir, base ) ) )
                 for child in self.labelBox:
                     child.destroy()
@@ -445,6 +469,7 @@ class ApplicationLauncher( easyButton ):
         if not exists:
             # FIXME: What to do in this case?
             self.destroy()
+        return False
 
 class MenuApplicationLauncher( ApplicationLauncher ):
 
@@ -485,11 +510,11 @@ class MenuApplicationLauncher( ApplicationLauncher ):
 
         if self.showComment and self.appComment != "":
             if self.iconSize <= 2:
-                self.addLabel( appName, [ pango.AttrScale( pango.SCALE_SMALL, 0, -1 ) ] )
-                self.addLabel( appComment, [ pango.AttrScale( pango.SCALE_X_SMALL, 0, -1 ) ] )
+                self.addLabel( '<span size="small">%s</span>' % appName)
+                self.addLabel( '<span size="x-small">%s</span>' % appComment)
             else:
                 self.addLabel( appName )
-                self.addLabel( appComment, [ pango.AttrScale( pango.SCALE_SMALL, 0, -1 ) ] )
+                self.addLabel( '<span size="small">%s</span>' % appComment )
         else:
             self.addLabel( appName )
 
@@ -517,13 +542,13 @@ class FavApplicationLauncher( ApplicationLauncher ):
     def setupLabels( self ):
         ## if self.appGenericName:
             ## if self.swapGeneric:
-                ## self.addLabel( self.appName, [ pango.AttrWeight( pango.WEIGHT_BOLD, 0, -1 ) ] )
+                ## self.addLabel( '<span weight="bold">%s</span>' % self.appName )
                 ## self.addLabel( self.appGenericName )
             ## else:
-                ## self.addLabel( self.appGenericName, [ pango.AttrWeight( pango.WEIGHT_BOLD, 0, -1 ) ] )
+                ## self.addLabel( '<span weight="bold">%s</span>' % self.appGenericName )
                 ## self.addLabel( self.appName )
         ## else:
-            ## self.addLabel( self.appName, [ pango.AttrWeight( pango.WEIGHT_BOLD, 0, -1 ) ] )
+            ## self.addLabel( '<span weight="bold">%s</span>' % self.appName )
             ## if self.appComment != "":
                 ## self.addLabel( self.appComment )
             ## else:

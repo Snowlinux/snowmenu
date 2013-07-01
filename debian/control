@@ -7,7 +7,7 @@ Standards-Version: 3.7.2
 
 Package: snowmenu
 Architecture: all
-Depends: python (>= 2.4), python (<< 3), python-gtk2, python-glade2, python-mate-menu, python-mate-desktop, python-corba, python-mate, python-xdg, snowlinux-common, snowmenu-keybinder
+Depends: Depends: python (>= 2.4), python (<< 3), python-gtk2, python-glade2, snowlinux-common, python-mate-menu, python-xdg, libmatepanelapplet, libmatedesktop, mate-menus, gvfs-bin, python-xlib
 Description: Advanced MATE menu
  A simple and easy to use menu for the MATE desktop environment,
  forked from mintmenu.

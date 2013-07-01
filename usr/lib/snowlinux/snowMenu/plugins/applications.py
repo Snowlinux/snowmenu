@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-import gtk
-import gtk.glade
-import gobject
+import gi
+gi.require_version("Gtk", "2.0")
+
+from gi.repository import Gtk, GObject, Pango, Gdk, Gio
+
 import os
-import mateconf
+# import mateconf
 import fnmatch
 import time
 import string
@@ -13,11 +15,15 @@ import threading
 import commands
 import subprocess
 import filecmp
+import ctypes
+from ctypes import *
 
 from easybuttons import *
 from execute import Execute
-from easygconf import EasyGConf
+from easygsettings import EasyGSettings
 from easyfiles import *
+
+gtk = CDLL("libgtk-x11-2.0.so.0")
 
 from filemonitor import monitor as filemonitor
 
@@ -26,7 +32,7 @@ import matemenu
 
 from user import home
 
-gtk.gdk.threads_init()
+GObject.threads_init()
 
 # i18n
 gettext.install("snowmenu", "/usr/share/snowlinux/locale")
@@ -118,27 +124,28 @@ class Menu:
 
 
 
-class SuggestionButton ( gtk.Button ):
+class SuggestionButton ( Gtk.Button ):
 
     def __init__( self, iconName, iconSize, label ):
-        gtk.Button.__init__( self )
+        Gtk.Button.__init__( self )
         self.iconName = iconName
-        self.set_relief( gtk.RELIEF_NONE )
+        self.set_relief( Gtk.ReliefStyle.NONE )
         self.set_size_request( -1, -1 )
-        Align1 = gtk.Alignment( 0, 0.5, 1.0, 0 )
-        HBox1 = gtk.HBox()
-        labelBox = gtk.VBox( False, 2 )
-        self.image = gtk.Image()
+        Align1 = Gtk.Alignment()
+        Align1.set( 0, 0.5, 1.0, 0 )
+        HBox1 = Gtk.HBox()
+        labelBox = Gtk.VBox( False, 2 )
+        self.image = Gtk.Image()
         self.image.set_from_stock( self.iconName, iconSize )
         self.image.show()
         HBox1.pack_start( self.image, False, False, 5 )
-        self.label = gtk.Label()
-        self.label.set_ellipsize( pango.ELLIPSIZE_END )
+        self.label = Gtk.Label()
+        self.label.set_ellipsize( Pango.EllipsizeMode.END )
         self.label.set_alignment( 0.0, 1.0 )
         self.label.show()
-        labelBox.pack_start( self.label )
+        labelBox.pack_start( self.label, True, True, 2 )
         labelBox.show()
-        HBox1.pack_start( labelBox )
+        HBox1.pack_start( labelBox, True, True, 2 )
         HBox1.show()
         Align1.add( HBox1 )
         Align1.show()
@@ -154,12 +161,20 @@ class SuggestionButton ( gtk.Button ):
     def set_icon_size (self, size):
         self.image.set_from_stock( self.iconName, size )
 
+class TargetEntry(Structure):
+    _fields_ = [("target", c_char_p),
+                ("flags", c_int),
+                ("info", c_int)]
+
 class pluginclass( object ):
     TARGET_TYPE_TEXT = 80
-    toButton = [ ( "text/uri-list", 0, TARGET_TYPE_TEXT ) ]
+    array2 = TargetEntry * 2
+    toButton = array2( ("text/uri-list", 0, TARGET_TYPE_TEXT), ("text/uri-list", 0, TARGET_TYPE_TEXT) )
     TARGET_TYPE_FAV = 81
-    toFav = [ ( "FAVORITES", gtk.TARGET_SAME_APP, TARGET_TYPE_FAV ), ( "text/plain", 0, 100 ), ( "text/uri-list", 0, 101 ) ]
-    fromFav = [ ( "FAVORITES", gtk.TARGET_SAME_APP, TARGET_TYPE_FAV ) ]
+    array = TargetEntry * 3
+    toFav = array( ( "FAVORITES", Gtk.TargetFlags.SAME_APP, 81 ), ( "text/plain", 0, 100 ), ( "text/uri-list", 0, 101 ) )
+    array1 = TargetEntry * 2
+    fromFav = array1( ("FAVORITES", Gtk.TargetFlags.SAME_APP, 81), ("FAVORITES", Gtk.TargetFlags.SAME_APP, 81) )
 
     @print_timing
     def __init__( self, snowMenuWin, toggleButton, de ):
@@ -170,40 +185,40 @@ class pluginclass( object ):
         self.toggleButton = toggleButton
         self.de = de
 
+        self.builder = Gtk.Builder()
         # The Glade file for the plugin
-        self.gladefile = os.path.join( os.path.dirname( __file__ ), "applications.glade" )
+        self.builder.add_from_file (os.path.join( os.path.dirname( __file__ ), "applications.glade" ))
 
         # Read GLADE file
-        self.wTree = gtk.glade.XML( self.gladefile, "mainWindow" )
-        self.searchEntry = self.wTree.get_widget( "searchEntry" )
-        self.searchButton = self.wTree.get_widget( "searchButton" )
-        self.applicationsBox = self.wTree.get_widget( "applicationsBox" )
-        self.categoriesBox = self.wTree.get_widget( "categoriesBox" )
-        self.favoritesBox = self.wTree.get_widget( "favoritesBox" )
-        self.applicationsScrolledWindow = self.wTree.get_widget( "applicationsScrolledWindow" )
+        self.searchEntry = self.builder.get_object( "searchEntry" )
+        self.searchButton = self.builder.get_object( "searchButton" )
+        self.applicationsBox =self.builder.get_object( "applicationsBox" )
+        self.categoriesBox =self.builder.get_object( "categoriesBox" )
+        self.favoritesBox =self.builder.get_object( "favoritesBox" )
+        self.applicationsScrolledWindow =self.builder.get_object( "applicationsScrolledWindow" )
 
         #i18n
-        self.wTree.get_widget("searchLabel").set_text("<span weight='bold'>" + _("Search:") + "</span>")
-        self.wTree.get_widget("searchLabel").set_use_markup(True)
-        self.wTree.get_widget("label6").set_text(_("Favorites"))
-        self.wTree.get_widget("label2").set_text(_("Applications"))
+        self.builder.get_object("searchLabel").set_text("<span weight='bold'>" + _("Search:") + "</span>")
+        self.builder.get_object("searchLabel").set_use_markup(True)
+        self.builder.get_object("label6").set_text(_("Favorites"))
+        self.builder.get_object("label2").set_text(_("Applications")) 
 
-        self.snowMenuWin.SetHeadingStyle( [self.wTree.get_widget("label6"), self.wTree.get_widget("label2")] )
+        self.snowMenuWin.SetHeadingStyle( [self.builder.get_object("label6"),self.builder.get_object("label2")] )
 
         self.numApps = 0
         # These properties are NECESSARY to maintain consistency
 
         # Set 'window' property for the plugin (Must be the root widget)
-        self.window = self.wTree.get_widget( "mainWindow" )
+        self.window = self.builder.get_object( "mainWindow" )
 
         # Set 'heading' property for plugin
         self.heading = ""#_("Applications")
 
         # This should be the first item added to the window in glade
-        self.content_holder = self.wTree.get_widget( "Applications" )
+        self.content_holder = self.builder.get_object( "Applications" )
 
         # Items to get custom colors
-        self.itemstocolor = [ self.wTree.get_widget( "viewport1" ), self.wTree.get_widget( "viewport2" ), self.wTree.get_widget( "viewport3" ), self.wTree.get_widget( "hpaned1" ) ]
+        self.itemstocolor = [self.builder.get_object( "viewport1" ),self.builder.get_object( "viewport2" ),self.builder.get_object( "viewport3" ),self.builder.get_object( "notebook2" ) ]
 
         # Unset all timers
         self.filterTimer = None
@@ -211,26 +226,28 @@ class pluginclass( object ):
         # Hookup for text input
         self.content_holder.connect( "key-press-event", self.keyPress )
 
-        self.favoritesBox.connect( "drag_data_received", self.ReceiveCallback )
-        self.favoritesBox.drag_dest_set( gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, self.toButton, gtk.gdk.ACTION_COPY )
+        self.favoritesBox.connect( "drag-data-received", self.ReceiveCallback )
+        gtk.gtk_drag_dest_set ( hash(self.favoritesBox), Gtk.DestDefaults.MOTION | Gtk.DestDefaults.HIGHLIGHT | Gtk.DestDefaults.DROP,  self.toButton, 2, Gdk.DragAction.COPY )
 
-        self.gconfHandlers = []
-        # Gconf stuff
-        self.gconf = EasyGConf( "/apps/snowMenu/plugins/applications/" )
-        self.GetGconfEntries()
-        self.gconf.notifyAdd( "icon_size", self.changeIconSize )
-        self.gconf.notifyAdd( "favicon_size", self.changeFavIconSize )
-        self.gconf.notifyAdd( "height", self.changePluginSize )
-        self.gconf.notifyAdd( "width", self.changePluginSize )
-        self.gconf.notifyAdd( "categories_mouse_over", self.changeCategoriesMouseOver )
-        self.gconf.notifyAdd( "swap_generic_name", self.changeSwapGenericName )
-        self.gconf.notifyAdd( "show_category_icons", self.changeShowCategoryIcons )
-        self.gconf.notifyAdd( "show_application_comments", self.changeShowApplicationComments )
-        self.gconf.notifyAdd( "use_apt", self.switchAPTUsage)
+        try:
+        # GSettings stuff
+            self.settings = EasyGSettings( "com.linuxmint.mintmenu.plugins.applications" )
+            self.GetGSettingsEntries()
+            self.settings.notifyAdd( "icon-size", self.changeIconSize )
+            self.settings.notifyAdd( "favicon-size", self.changeFavIconSize )
+            self.settings.notifyAdd( "height", self.changePluginSize )
+            self.settings.notifyAdd( "width", self.changePluginSize )
+            self.settings.notifyAdd( "categories-mouse-over", self.changeCategoriesMouseOver )
+            self.settings.notifyAdd( "swap-generic-name", self.changeSwapGenericName )
+            self.settings.notifyAdd( "show-category-icons", self.changeShowCategoryIcons )
+            self.settings.notifyAdd( "show-application-comments", self.changeShowApplicationComments )
+            self.settings.notifyAdd( "use-apt", self.switchAPTUsage)
 
-        self.gconf.bindGconfEntryToVar( "int", "category_hover_delay", self, "categoryhoverdelay" )
-        self.gconf.bindGconfEntryToVar( "bool", "do_not_filter", self, "donotfilterapps" )
-        self.gconf.bindGconfEntryToVar( "string", "search_command", self, "searchtool" )
+            self.settings.bindGSettingsEntryToVar( "int", "category-hover-delay", self, "categoryhoverdelay" )
+            self.settings.bindGSettingsEntryToVar( "bool", "do-not-filter", self, "donotfilterapps" )
+            self.settings.bindGSettingsEntryToVar( "string", "search-command", self, "searchtool" )
+        except Exception, detail:
+            print detail
 
         self.favCols = 1
         self.currentFavCol = 0
@@ -246,6 +263,9 @@ class pluginclass( object ):
         self.categoryList = []
         self.applicationList = []
         self.menuFileMonitors = []
+
+        #dirty ugly hack, to get favorites drag origin position
+        self.drag_origin = None
 
         self.rebuildLock = False
         self.activeFilter = (1, "")
@@ -263,9 +283,10 @@ class pluginclass( object ):
         self.refresh_apt_cache()
         self.suggestions = []
         self.current_suggestion = None
-        self.get_panel()
+        self.panel = "top"
+        self.panel_position = -1
 
-        self.wTree.get_widget("searchButton").connect( "button-release-event", self.searchPopup )
+        self.builder.get_object("searchButton").connect( "button-release-event", self.searchPopup )
 
     def refresh_apt_cache(self):
         if self.useAPT:
@@ -273,16 +294,16 @@ class pluginclass( object ):
             os.system("/usr/lib/snowlinux/snowMenu/plugins/get_apt_cache.py > %s/.snowlinux/snowMenu/apt.cache &" % home)
 
     def get_panel(self):
-        self.panel = None
-        self.panel_position = 0
-        appletidlist = mateconf.client_get_default().get_list("/apps/panel/general/applet_id_list", "string")
-        for applet in appletidlist:
-            bonobo_id = mateconf.client_get_default().get_string("/apps/panel/applets/" + applet + "/applet_iid")
-            if bonobo_id == "OAFIID:MATE_snowMenu":
-                self.panel = mateconf.client_get_default().get_string("/apps/panel/applets/" + applet + "/toplevel_id")
-                self.panel_position = mateconf.client_get_default().get_int("/apps/panel/applets/" + applet + "/position") + 1
-
-        print self.panel
+        panelsettings = Gio.Settings.new("org.mate.panel")
+        applet_list = panelsettings.get_strv("object-id-list")
+        for applet in applet_list:
+            object_schema = Gio.Settings.new_with_path("org.mate.panel.object", "/org/mate/panel/objects/%s/" % (applet))
+            keys = object_schema.list_keys()
+            if "applet-iid" in keys:
+                iid = object_schema.get_string("applet-iid")
+                if iid is not None and iid.find("MintMenu") != -1:
+                    self.panel = object_schema.get_string("toplevel-id")
+                    self.panel_position = object_schema.get_int("position") + 1
 
     def apturl_install(self, widget, pkg_name):
         os.system("xdg-open apt://" + pkg_name + " &")
@@ -302,30 +323,30 @@ class pluginclass( object ):
         self.categoriesBox.destroy()
         self.favoritesBox.destroy()
 
-        self.gconf.notifyRemoveAll()
+        self.settings.notifyRemoveAll()
 
         for mId in self.menuFileMonitors:
            filemonitor.removeMonitor( mId )
 
-    def changePluginSize( self, client, connection_id, entry, args ):
-        if entry.get_key() == self.gconf.gconfDir+"width":
-            self.width = entry.get_value().get_int()
+    def changePluginSize( self, settings, key, args ):
+        if key == "width":
+            self.width = settings.get_int(key)
             self.categoriesBox.set_size_request( self.width / 3, -1 )
             self.applicationsBox.set_size_request( self.width / 2, -1 )
 
-        elif entry.get_key() == self.gconf.gconfDir+"height":
-            self.heigth = entry.get_value().get_int()
+        elif key == "height":
+            self.heigth = settings.get_int(key)
         self.content_holder.set_size_request( self.width, self.height )
 
     def changeSwapGenericName( self, client, connection_id, entry, args ):
-        self.swapgeneric = entry.get_value().get_bool()
+        self.swapgeneric = settings.get_boolean(key)
 
         for child in self.favoritesBox:
             if isinstance( child, FavApplicationLauncher):
                 child.setSwapGeneric( self.swapgeneric )
 
-    def changeShowCategoryIcons( self, client, connection_id, entry, args ):
-        self.showcategoryicons = entry.get_value().get_bool()
+    def changeShowCategoryIcons( self, settings, key, args ):
+        self.showcategoryicons = settings.get_boolean(key)
 
         if self.showcategoryicons:
             categoryIconSize = self.iconSize
@@ -335,8 +356,8 @@ class pluginclass( object ):
         for child in self.categoriesBox:
             child.setIconSize( categoryIconSize )
 
-    def changeIconSize( self, client, connection_id, entry, args ):
-        self.iconSize = entry.get_value().get_int()
+    def changeIconSize( self, settings, key, args ):
+        self.iconSize = settings.get_int(key)
 
         if self.showcategoryicons:
             categoryIconSize = self.iconSize
@@ -353,23 +374,23 @@ class pluginclass( object ):
                 pass
 
     def changeFavIconSize( self, client, connection_id, entry, args ):
-        self.faviconsize = entry.get_value().get_int()
+        self.faviconsize = settings.get_int(key)
 
         for child in self.favoritesBox:
             if isinstance( child, FavApplicationLauncher):
                 child.setIconSize( self.faviconsize )
 
-    def switchAPTUsage( self, client, connection_id, entry, args ):
-        self.useAPT = entry.get_value().get_bool()
+    def switchAPTUsage( self, settings, key, args ):
+        self.useAPT = settings.get_boolean(key)
         self.refresh_apt_cache()
 
-    def changeShowApplicationComments( self, client, connection_id, entry, args ):
-        self.showapplicationcomments = entry.get_value().get_bool()
+    def changeShowApplicationComments( self, settings, key, args ):
+        self.showapplicationcomments = settings.get_boolean(key)
         for child in self.applicationsBox:
             child.setShowComment( self.showapplicationcomments )
 
     def changeCategoriesMouseOver( self, client, connection_id, entry, args ):
-        self.categories_mouse_over = entry.get_value().get_bool()
+        self.categories_mouse_over = settings.get_boolean(key)
         for child in self.categoriesBox:
             if self.categories_mouse_over and not child.mouseOverHandlerIds:
                 startId = child.connect( "enter", self.StartFilter, child.filter )
@@ -380,8 +401,8 @@ class pluginclass( object ):
                 child.disconnect( child.mouseOverHandlerIds[1] )
                 child.mouseOverHandlerIds = None
 
-    def changeFavCols(self, client, connection_id, entry, args):
-        self.favCols = entry.get_value().get_int()
+    def changeFavCols(self, settings, key, args):
+        self.favCols = settings.get_int(key)
         for fav in self.favorites:
             self.favoritesBox.remove( fav )
             self.favoritesPositionOnGrid( fav )
@@ -395,7 +416,7 @@ class pluginclass( object ):
         oldicon = self.icon
         oldshowapplicationcomments = self.showapplicationcomments
 
-        self.GetGconfEntries()
+        self.GetGSettingsEntries()
 
         # if the config hasn't changed return
         if oldcategories_mouse_over == self.categories_mouse_over and \
@@ -413,28 +434,28 @@ class pluginclass( object ):
         self.buildFavorites()
         self.RebuildPlugin()
 
-    def GetGconfEntries( self ):
+    def GetGSettingsEntries( self ):
 
-        self.categories_mouse_over = self.gconf.get( "bool", "categories_mouse_over", True )
-        self.width = self.gconf.get( "int", "width", 480 )
-        self.height = self.gconf.get( "int", "height", 480 )
-        self.donotfilterapps = self.gconf.get( "bool", "do_not_filter", False )
-        self.iconSize = self.gconf.get( "int", "icon_size", 22 )
-        self.faviconsize = self.gconf.get( "int", "favicon_size", 48 )
-        self.swapgeneric = self.gconf.get( "bool", "swap_generic_name", False )
-        self.showcategoryicons = self.gconf.get( "bool", "show_category_icons", True )
-        self.categoryhoverdelay = self.gconf.get( "int", "category_hover_delay", 150 )
-        self.showapplicationcomments = self.gconf.get( "bool", "show_application_comments", True )
-        self.useAPT = self.gconf.get( "bool", "use_apt", False )
+        self.categories_mouse_over = self.settings.get( "bool", "categories-mouse-over")
+        self.width = self.settings.get( "int", "width")
+        self.height = self.settings.get( "int", "height")
+        self.donotfilterapps = self.settings.get( "bool", "do-not-filter")
+        self.iconSize = self.settings.get( "int", "icon-size")
+        self.faviconsize = self.settings.get( "int", "favicon-size")
+        self.swapgeneric = self.settings.get( "bool", "swap-generic-name")
+        self.showcategoryicons = self.settings.get( "bool", "show-category-icons")
+        self.categoryhoverdelay = self.settings.get( "int", "category-hover-delay")
+        self.showapplicationcomments = self.settings.get( "bool", "show-application-comments")
+        self.useAPT = self.settings.get( "bool", "use-apt")
 
         # Search tool
-        self.searchtool = self.gconf.get( "string", "search_command", "mate-search-tool --named \"%s\" --start" )
+        self.searchtool = self.settings.get( "string", "search-command")
         if self.searchtool == "beagle-search SEARCH_STRING":
             self.searchtool = "mate-search-tool --named \"%s\" --start"
-            self.gconf.set( "string", "search_command", "mate-search-tool --named \"%s\" --start" )
+            self.settings.set( "string", "search-command", "mate-search-tool --named \"%s\" --start" )
 
         # Plugin icon
-        self.icon = self.gconf.get( "string", "icon", "applications-accessories" )
+        self.icon = self.settings.get( "string", "icon" )
 
     def RebuildPlugin(self):
         self.content_holder.set_size_request( self.width, self.height )
@@ -473,7 +494,7 @@ class pluginclass( object ):
     def buildButtonList( self ):
         if self.buildingButtonList:
             self.stopBuildingButtonList = True
-            gobject.timeout_add( 100, self.buildButtonList )
+            GObject.timeout_add( 100, self.buildButtonList )
             return
 
         self.stopBuildingButtonList = False
@@ -487,34 +508,34 @@ class pluginclass( object ):
     def StartFilter( self, widget, category ):
         # if there is a timer for a different category running stop it
         if self.filterTimer:
-            gobject.source_remove( self.filterTimer )
-        self.filterTimer = gobject.timeout_add( self.categoryhoverdelay, self.Filter, widget, category )
+            GObject.source_remove( self.filterTimer )
+        self.filterTimer = GObject.timeout_add( self.categoryhoverdelay, self.Filter, widget, category )
 
     def StopFilter( self, widget ):
         if self.filterTimer:
-            gobject.source_remove( self.filterTimer )
+            GObject.source_remove( self.filterTimer )
             self.filterTimer = None
 
     def add_search_suggestions(self, text):
 
         text = "<b>%s</b>" % text
 
-        suggestionButton = SuggestionButton(gtk.STOCK_ADD, self.iconSize, "")
+        suggestionButton = SuggestionButton(Gtk.STOCK_ADD, self.iconSize, "")
         suggestionButton.connect("clicked", self.search_google)
         suggestionButton.set_text(_("Search Google for %s") % text)
         suggestionButton.set_image("/usr/lib/snowlinux/snowMenu/search_engines/google.ico")
         self.applicationsBox.add(suggestionButton)
         self.suggestions.append(suggestionButton)
 
-        suggestionButton = SuggestionButton(gtk.STOCK_ADD, self.iconSize, "")
+        suggestionButton = SuggestionButton(Gtk.STOCK_ADD, self.iconSize, "")
         suggestionButton.connect("clicked", self.search_wikipedia)
         suggestionButton.set_text(_("Search Wikipedia for %s") % text)
         suggestionButton.set_image("/usr/lib/snowlinux/snowMenu/search_engines/wikipedia.ico")
         self.applicationsBox.add(suggestionButton)
         self.suggestions.append(suggestionButton)
 
-        separator = gtk.EventBox()
-        separator.add(gtk.HSeparator())
+        separator = Gtk.EventBox()
+        separator.add(Gtk.HSeparator())
         separator.set_size_request(-1, 20)
         separator.type = "separator"
         self.snowMenuWin.SetPaneColors( [ separator ] )
@@ -522,14 +543,14 @@ class pluginclass( object ):
         self.applicationsBox.add(separator)
         self.suggestions.append(separator)
 
-        suggestionButton = SuggestionButton(gtk.STOCK_ADD, self.iconSize, "")
+        suggestionButton = SuggestionButton(Gtk.STOCK_ADD, self.iconSize, "")
         suggestionButton.connect("clicked", self.search_dictionary)
         suggestionButton.set_text(_("Lookup %s in Dictionary") % text)
         suggestionButton.set_image("/usr/lib/snowlinux/snowMenu/search_engines/dictionary.png")
         self.applicationsBox.add(suggestionButton)
         self.suggestions.append(suggestionButton)
 
-        suggestionButton = SuggestionButton(gtk.STOCK_FIND, self.iconSize, "")
+        suggestionButton = SuggestionButton(Gtk.STOCK_ADD, self.iconSize, "")
         suggestionButton.connect("clicked", self.Search)
         suggestionButton.set_text(_("Search Computer for %s") % text)
         self.applicationsBox.add(suggestionButton)
@@ -538,13 +559,8 @@ class pluginclass( object ):
     def add_apt_filter_results(self, keyword):
         try:
             # Wait to see if the keyword has changed.. before doing anything
-            time.sleep(0.3)
             current_keyword = keyword
-            gtk.gdk.threads_enter()
-            try:
-                current_keyword = self.searchEntry.get_text()
-            finally:
-                gtk.gdk.threads_leave()
+            current_keyword = self.searchEntry.get_text()
             if keyword != current_keyword:
                 return
             found_packages = []
@@ -583,33 +599,32 @@ class pluginclass( object ):
                         print "Invalid status code: " + status
             found_packages.extend(found_in_name)
             found_packages.extend(found_elsewhere)
-            gtk.gdk.threads_enter()
-            try:
-                if keyword == self.searchEntry.get_text() and len(found_packages) > 0:
-                    last_separator = gtk.EventBox()
-                    last_separator.add(gtk.HSeparator())
-                    last_separator.set_size_request(-1, 20)
-                    last_separator.type = "separator"
-                    self.snowMenuWin.SetPaneColors( [  last_separator ] )
-                    last_separator.show_all()
-                    self.applicationsBox.add(last_separator)
-                    self.suggestions.append(last_separator)
-                    for pkg in found_packages:
-                        name = pkg.name
-                        for word in keywords:
-                            if word != "":
-                                name = name.replace(word, "<b>%s</b>" % word);
-                        suggestionButton = SuggestionButton(gtk.STOCK_ADD, self.iconSize, "")
-                        suggestionButton.connect("clicked", self.apturl_install, pkg.name)
-                        suggestionButton.set_text(_("Install package '%s'") % name)
-                        suggestionButton.set_tooltip_text("%s\n\n%s\n\n%s" % (pkg.name, pkg.summary, pkg.description))
-                        suggestionButton.set_icon_size(self.iconSize)
-                        self.applicationsBox.add(suggestionButton)
-                        self.suggestions.append(suggestionButton)
-                        #if cache != self.current_results:
-                        #    self.current_results.append(pkg)
-            finally:
-                gtk.gdk.threads_leave()
+            if keyword == self.searchEntry.get_text() and len(found_packages) > 0:
+                last_separator = Gtk.EventBox()
+                last_separator.add(Gtk.HSeparator())
+                last_separator.set_size_request(-1, 20)
+                last_separator.type = "separator"
+                self.mintMenuWin.SetPaneColors( [  last_separator ] )
+                last_separator.show_all()
+                self.applicationsBox.add(last_separator)
+                self.suggestions.append(last_separator)
+                #Reduce the number of results to 10 max... it takes a HUGE amount of time to add the GTK box in the menu otherwise..
+                if len(found_packages) > 10:
+                    found_packages = found_packages[:10]
+                for pkg in found_packages:
+                    name = pkg.name
+                    for word in keywords:
+                        if word != "":
+                            name = name.replace(word, "<b>%s</b>" % word);
+                    suggestionButton = SuggestionButton(Gtk.STOCK_ADD, self.iconSize, "")
+                    suggestionButton.connect("clicked", self.apturl_install, pkg.name)
+                    suggestionButton.set_text(_("Install package '%s'") % name)
+                    suggestionButton.set_tooltip_text("%s\n\n%s\n\n%s" % (pkg.name, pkg.summary, pkg.description))
+                    suggestionButton.set_icon_size(self.iconSize)
+                    self.applicationsBox.add(suggestionButton)
+                    self.suggestions.append(suggestionButton)
+                    #if cache != self.current_results:
+                    #    self.current_results.append(pkg)
 
             #if len(found_packages) == 0:
             #    gtk.gdk.threads_enter()
@@ -640,8 +655,8 @@ class pluginclass( object ):
                         found_packages.append(pkg)
 
             if len(found_packages) > 0:
-                    last_separator = gtk.EventBox()
-                    last_separator.add(gtk.HSeparator())
+                    last_separator = Gtk.EventBox()
+                    last_separator.add(Gtk.HSeparator())
                     last_separator.set_size_request(-1, 20)
                     last_separator.type = "separator"
                     self.snowMenuWin.SetPaneColors( [  last_separator ] )
@@ -654,7 +669,7 @@ class pluginclass( object ):
                 for word in keywords:
                     if word != "":
                         name = name.replace(word, "<b>%s</b>" % word);
-                suggestionButton = SuggestionButton(gtk.STOCK_ADD, self.iconSize, "")
+                suggestionButton = SuggestionButton(Gtk.STOCK_ADD, self.iconSize, "")
                 suggestionButton.connect("clicked", self.apturl_install, pkg.name)
                 suggestionButton.set_text(_("Install package '%s'") % name)
                 suggestionButton.set_tooltip_text("%s\n\n%s\n\n%s" % (pkg.name, pkg.summary.capitalize(), pkg.description))
@@ -695,13 +710,11 @@ class pluginclass( object ):
                             #if (len(self.current_results) > 0):
                                 #self.add_apt_filter_results_sync(self.current_results, text)
                             #else:
-                            thr = threading.Thread(name="snow-menu-apt-filter", group=None, target=self.add_apt_filter_results, args=([text]), kwargs={})
-                            thr.start()
+                            GObject.timeout_add (300, self.add_apt_filter_results, text)
                         else:
                             self.current_results = []
                             self.add_search_suggestions(text)
-                            thr = threading.Thread(name="snow-menu-apt-filter", group=None, target=self.add_apt_filter_results, args=([text]), kwargs={})
-                            thr.start()
+                            GObject.timeout_add (300, self.add_apt_filter_results, text)
                         self.current_suggestion = text
                     else:
                         self.current_suggestion = None
@@ -711,10 +724,10 @@ class pluginclass( object ):
                     self.current_results = []
 
                 for i in self.categoriesBox.get_children():
-                    i.set_relief( gtk.RELIEF_NONE )
+                    i.set_relief( Gtk.ReliefStyle.NONE )
 
                 allButton = self.categoriesBox.get_children()[0];
-                allButton.set_relief( gtk.RELIEF_HALF )
+                allButton.set_relief( Gtk.ReliefStyle.HALF )
                 self.activeFilter = (0, text)
         else:
             #print "CATFILTER"
@@ -732,8 +745,8 @@ class pluginclass( object ):
                     i.filterCategory( category )
 
             for i in self.categoriesBox.get_children():
-                i.set_relief( gtk.RELIEF_NONE )
-            widget.set_relief( gtk.RELIEF_HALF )
+                i.set_relief( Gtk.ReliefStyle.NONE )
+            widget.set_relief( Gtk.ReliefStyle.HALF )
             widget.grab_focus()
 
             self.searchEntry.set_text( "" )
@@ -742,11 +755,11 @@ class pluginclass( object ):
 
     # Forward all text to the search box
     def keyPress( self, widget, event ):
-        if event.string.strip() != "" or event.keyval == gtk.keysyms.BackSpace:
+        if event.string.strip() != "" or event.keyval == Gdk.KEY_BackSpace:
             self.searchEntry.event( event )
             return True
 
-        if event.keyval == gtk.keysyms.Down and self.searchEntry.is_focus():
+        if event.keyval == Gdk.KEY_Down and self.searchEntry.is_focus():
             self.applicationsBox.get_children()[0].grab_focus()
 
         return False
@@ -759,18 +772,20 @@ class pluginclass( object ):
                 insertBefore = True
 
             if widget.type == "location":
-                mTree = gtk.glade.XML( self.gladefile, "favoritesMenu" )
+                mTree = Gtk.Menu()
+                mTree.set_events(Gdk.EventMask.POINTER_MOTION_MASK | Gdk.EventMask.POINTER_MOTION_HINT_MASK |
+                                    Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK)
                 #i18n
 
-                desktopMenuItem = gtk.MenuItem(_("Add to desktop"))
-                panelMenuItem = gtk.MenuItem(_("Add to panel"))
-                separator1 = gtk.SeparatorMenuItem()
-                startupMenuItem = gtk.CheckMenuItem(_("Launch when I log in"))
-                separator3 = gtk.SeparatorMenuItem()
-                launchMenuItem = gtk.MenuItem(_("Launch"))
-                removeFromFavMenuItem = gtk.MenuItem(_("Remove from favorites"))
-                separator4 = gtk.SeparatorMenuItem()
-                propsMenuItem = gtk.MenuItem(_("Edit properties"))
+                desktopMenuItem = Gtk.MenuItem(_("Add to desktop"))
+                panelMenuItem = Gtk.MenuItem(_("Add to panel"))
+                separator1 = Gtk.SeparatorMenuItem()
+                startupMenuItem = Gtk.CheckMenuItem(_("Launch when I log in"))
+                separator3 = Gtk.SeparatorMenuItem()
+                launchMenuItem = Gtk.MenuItem(_("Launch"))
+                removeFromFavMenuItem = Gtk.MenuItem(_("Remove from favorites"))
+                separator4 = Gtk.SeparatorMenuItem()
+                propsMenuItem = Gtk.MenuItem(_("Edit properties"))
 
                 desktopMenuItem.connect("activate", self.add_to_desktop, widget)
                 panelMenuItem.connect("activate", self.add_to_panel, widget)
@@ -787,71 +802,73 @@ class pluginclass( object ):
                 propsMenuItem.connect( "activate", self.onPropsApp, widget)
 
                 if self.de == "mate":
-                    mTree.get_widget("favoritesMenu").append(desktopMenuItem)
-                    mTree.get_widget("favoritesMenu").append(panelMenuItem)
-                    mTree.get_widget("favoritesMenu").append(separator1)
-                mTree.get_widget("favoritesMenu").append(startupMenuItem)
-                mTree.get_widget("favoritesMenu").append(separator3)
-                mTree.get_widget("favoritesMenu").append(launchMenuItem)
-                mTree.get_widget("favoritesMenu").append(removeFromFavMenuItem)
-                mTree.get_widget("favoritesMenu").append(separator4)
-                mTree.get_widget("favoritesMenu").append(propsMenuItem)
+                    mTree.append(desktopMenuItem)
+                    mTree.append(panelMenuItem)
+                    mTree.append(separator1)
+                mTree.append(startupMenuItem)
+                mTree.append(separator3)
+                mTree.append(launchMenuItem)
+                mTree.append(removeFromFavMenuItem)
+                mTree.append(separator4)
+                mTree.append(propsMenuItem)
 
-                mTree.get_widget("favoritesMenu").show_all()
+                mTree.show_all()
 
-                mTree.get_widget( "favoritesMenu" ).popup( None, None, None, ev.button, ev.time )
+                gtk.gtk_menu_popup(hash(mTree), None, None, None, None, ev.button, ev.time)
                 self.snowMenuWin.grab()
 
             else:
-                mTree = gtk.glade.XML( self.gladefile, "favoritesMenuExtra" )
+                mTree = Gtk.Menu()
+                mTree.set_events(Gdk.EventMask.POINTER_MOTION_MASK | Gdk.EventMask.POINTER_MOTION_HINT_MASK | 
+                                    Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK)
                 #i18n
-                removeMenuItem = gtk.MenuItem(_("Remove"))
-                insertSpaceMenuItem = gtk.MenuItem(_("Insert space"))
-                insertSeparatorMenuItem = gtk.MenuItem(_("Insert separator"))
-                mTree.get_widget("favoritesMenuExtra").append(removeMenuItem)
-                mTree.get_widget("favoritesMenuExtra").show_all()
+                removeMenuItem = Gtk.MenuItem(_("Remove"))
+                insertSpaceMenuItem = Gtk.MenuItem(_("Insert space"))
+                insertSeparatorMenuItem = Gtk.MenuItem(_("Insert separator"))
+                mTree.append(removeMenuItem)
+                mTree.show_all()
 
                 removeMenuItem.connect( "activate", self.onFavoritesRemove, widget )
-                mTree.get_widget( "favoritesMenuExtra" ).popup( None, None, None, ev.button, ev.time )
+                gtk.gtk_menu_popup(hash(mTree), None, None, None, None, ev.button, ev.time)
                 self.snowMenuWin.grab()
 
     def menuPopup( self, widget, event ):
         if event.button == 3:
-            mTree = gtk.glade.XML( self.gladefile, "applicationsMenu" )
+            mTree = Gtk.Menu()
 
             #i18n
-            desktopMenuItem = gtk.MenuItem(_("Add to desktop"))
-            panelMenuItem = gtk.MenuItem(_("Add to panel"))
-            separator1 = gtk.SeparatorMenuItem()
-            favoriteMenuItem = gtk.CheckMenuItem(_("Show in my favorites"))
-            startupMenuItem = gtk.CheckMenuItem(_("Launch when I log in"))
-            separator2 = gtk.SeparatorMenuItem()
-            launchMenuItem = gtk.MenuItem(_("Launch"))
-            uninstallMenuItem = gtk.MenuItem(_("Uninstall"))
-            deleteMenuItem = gtk.MenuItem(_("Delete from menu"))
-            separator3 = gtk.SeparatorMenuItem()
-            propsMenuItem = gtk.MenuItem(_("Edit properties"))
+            desktopMenuItem = Gtk.MenuItem(_("Add to desktop"))
+            panelMenuItem = Gtk.MenuItem(_("Add to panel"))
+            separator1 = Gtk.SeparatorMenuItem()
+            favoriteMenuItem = Gtk.CheckMenuItem(_("Show in my favorites"))
+            startupMenuItem = Gtk.CheckMenuItem(_("Launch when I log in"))
+            separator2 = Gtk.SeparatorMenuItem()
+            launchMenuItem = Gtk.MenuItem(_("Launch"))
+            uninstallMenuItem = Gtk.MenuItem(_("Uninstall"))
+            deleteMenuItem = Gtk.MenuItem(_("Delete from menu"))
+            separator3 = Gtk.SeparatorMenuItem()
+            propsMenuItem = Gtk.MenuItem(_("Edit properties"))
 
             if self.de == "mate":
-                mTree.get_widget("applicationsMenu").append(desktopMenuItem)
-                mTree.get_widget("applicationsMenu").append(panelMenuItem)
-                mTree.get_widget("applicationsMenu").append(separator1)
+                mTree.append(desktopMenuItem)
+                mTree.append(panelMenuItem)
+                mTree.append(separator1)
 
             mTree.get_widget("applicationsMenu").append(favoriteMenuItem)
-            mTree.get_widget("applicationsMenu").append(startupMenuItem)
+            mTree.append(startupMenuItem)
 
-            mTree.get_widget("applicationsMenu").append(separator2)
+            mTree.append(separator2)
 
-            mTree.get_widget("applicationsMenu").append(launchMenuItem)
+            mTree.append(launchMenuItem)
             if home in widget.desktopFile:
-                mTree.get_widget("applicationsMenu").append(deleteMenuItem)
+                mTree.append(deleteMenuItem)
                 deleteMenuItem.connect("activate", self.delete_from_menu, widget)
 
-            mTree.get_widget("applicationsMenu").append(separator3)
+            mTree.append(separator3)
 
-            mTree.get_widget("applicationsMenu").append(propsMenuItem)
+            mTree.append(propsMenuItem)
 
-            mTree.get_widget("applicationsMenu").show_all()
+            mTree.show_all()
 
             desktopMenuItem.connect("activate", self.add_to_desktop, widget)
             panelMenuItem.connect("activate", self.add_to_panel, widget)
@@ -873,57 +890,58 @@ class pluginclass( object ):
                 startupMenuItem.set_active( False )
                 startupMenuItem.connect( "toggled", self.onAddToStartup, widget )
 
-            mTree.get_widget( "applicationsMenu" ).connect( 'deactivate', self.onMenuPopupDeactivate)
-            mTree.get_widget( "applicationsMenu" ).popup( None, None, None, event.button, event.time )
+            mTree.connect( 'deactivate', self.onMenuPopupDeactivate)
+            gtk.gtk_menu_popup(hash(mTree), None, None, None, None, 0, 0)
+            return True
 
     def onMenuPopupDeactivate( self, widget):
         self.snowMenuWin.grab()
 
     def searchPopup( self, widget=None, event=None ):
-        menu = gtk.Menu()
+        menu = Gtk.Menu()
 
-        menuItem = gtk.ImageMenuItem(_("Search Google"))
-        img = gtk.Image()
+        menuItem = Gtk.ImageMenuItem(_("Search Google"))
+        img = Gtk.Image()
         img.set_from_file('/usr/lib/snowlinux/snowMenu/search_engines/google.ico')
         menuItem.set_image(img)
         menuItem.connect("activate", self.search_google)
         menu.append(menuItem)
 
-        menuItem = gtk.ImageMenuItem(_("Search Wikipedia"))
-        img = gtk.Image()
+        menuItem = Gtk.ImageMenuItem(_("Search Wikipedia"))
+        img = Gtk.Image()
         img.set_from_file('/usr/lib/snowlinux/snowMenu/search_engines/wikipedia.ico')
         menuItem.set_image(img)
         menuItem.connect("activate", self.search_wikipedia)
         menu.append(menuItem)
 
-        menuItem = gtk.SeparatorMenuItem()
+        menuItem = Gtk.SeparatorMenuItem()
         menu.append(menuItem)
 
-        menuItem = gtk.ImageMenuItem(_("Lookup Dictionnary"))
-        img = gtk.Image()
+        menuItem = Gtk.ImageMenuItem(_("Lookup Dictionnary"))
+        img = Gtk.Image()
         img.set_from_file('/usr/lib/snowlinux/snowMenu/search_engines/dictionary.png')
         menuItem.set_image(img)
         menuItem.connect("activate", self.search_dictionary)
         menu.append(menuItem)
 
-        menuItem = gtk.ImageMenuItem(_("Search Computer"))
-        img = gtk.Image()
-        img.set_from_stock(gtk.STOCK_FIND, self.iconSize)
+        menuItem = Gtk.ImageMenuItem(_("Search Computer"))
+        img = Gtk.Image()
+        img.set_from_stock(Gtk.STOCK_FIND, self.iconSize)
         menuItem.set_image(img)
         menuItem.connect("activate", self.Search)
         menu.append(menuItem)
 
-        menuItem = gtk.SeparatorMenuItem()
+        menuItem = Gtk.SeparatorMenuItem()
         menu.append(menuItem)
 
         menu.show_all()
-        #menu.popup( None, None, self.pos_func, 3, 0)
-        menu.popup( None, None, None, 3, 0)
+        gtk.gtk_menu_popup(hash(menu), None, None, None, None, 3, 0)
         #menu.attach_to_widget(self.searchButton, None)
         #menu.reposition()
         #menu.reposition()
         self.snowMenuWin.grab()
         self.focusSearchEntry()
+        return True
 
     def pos_func(self, menu=None):
         rect = self.searchButton.get_allocation()
@@ -967,38 +985,25 @@ class pluginclass( object ):
             print detail
 
     def add_to_panel(self, widget, desktopEntry):
-        import random
-        object_name = "snowmenu_"+''.join([random.choice('abcdefghijklmnopqrstuvwxyz0123456789') for x in xrange(8)])
-        new_directory = home + "/.mate2/panel2.d/default/launchers/"
-        os.system("mkdir -p " + new_directory)
-        new_file = new_directory + object_name
+        self.get_panel()
+        i = 0
+        panel_schema = Gio.Settings.new("org.mate.panel")
+        applet_list = panel_schema.get_strv("object-id-list")
+        while True:
+            test_obj = "object_%d" % (i)
+            if test_obj in applet_list:
+                i += 1
+            else:
+                break
 
-        # Copy the desktop file to the panels directory
-        os.system("cp \"%s\" \"%s\"" % (desktopEntry.desktopFile, new_file))
-        os.system("chmod a+rx %s" % (new_file))
-
-        # Add to Gnome/GConf
-        object_dir = "/apps/panel/objects/"
-        object_client = mateconf.client_get_default()
-
-        object_client.set_string(object_dir + object_name +"/"+ "menu_path", "applications:/")
-        object_client.set_bool(object_dir + object_name +"/"+ "locked", False)
-        object_client.set_int(object_dir + object_name +"/"+ "position", self.panel_position)
-        object_client.set_string(object_dir + object_name +"/"+ "object_type", "launcher-object")
-        object_client.set_bool(object_dir + object_name +"/"+ "panel_right_stick", False)
-        object_client.set_bool(object_dir + object_name +"/"+ "use_menu_path", False)
-        object_client.set_string(object_dir + object_name +"/"+ "launcher_location", new_file)
-        object_client.set_string(object_dir + object_name +"/"+ "custom_icon", "")
-        object_client.set_string(object_dir + object_name +"/"+ "tooltip", "")
-        object_client.set_string(object_dir + object_name +"/"+ "action_type", "lock")
-        object_client.set_bool(object_dir + object_name +"/"+ "use_custom_icon", False)
-        object_client.set_string(object_dir + object_name +"/"+ "attached_toplevel_id", "")
-        object_client.set_string(object_dir + object_name +"/"+ "bonobo_iid", "")
-        object_client.set_string(object_dir + object_name +"/"+ "toplevel_id", self.panel)
-
-        launchers_list = object_client.get_list("/apps/panel/general/object_id_list", "string")
-        launchers_list.append(object_name)
-        object_client.set_list("/apps/panel/general/object_id_list", mateconf.VALUE_STRING, launchers_list)
+        path = "/org/mate/panel/objects/%s/" % (test_obj)
+        new_schema = Gio.Settings.new_with_path("org.mate.panel.object", path)
+        new_schema.set_string("launcher-location", desktopEntry.desktopFile)
+        new_schema.set_string("object-type", "launcher")
+        new_schema.set_string("toplevel-id", self.panel)
+        new_schema.set_int("position", self.panel_position)
+        applet_list.append(test_obj)
+        panel_schema.set_strv("object-id-list", applet_list)
 
     def delete_from_menu(self, widget, desktopEntry):
         try:
@@ -1039,7 +1044,7 @@ class pluginclass( object ):
                 filePath = widget.desktopFile
 
         self.snowMenuWin.hide()
-        gtk.gdk.flush()
+        Gdk.flush()
 
         editProcess = subprocess.Popen(["/usr/bin/mate-desktop-item-edit", filePath])
         subprocess.Popen.communicate(editProcess)
@@ -1114,7 +1119,7 @@ class pluginclass( object ):
     # Scroll button into view
     def scrollItemIntoView( self, widget, event = None ):
         viewport = widget.parent
-        while not isinstance( viewport, gtk.Viewport ):
+        while not isinstance( viewport, Gtk.Viewport ):
             if not viewport.parent:
                 return
             viewport = viewport.parent
@@ -1122,7 +1127,7 @@ class pluginclass( object ):
         viewport.get_vadjustment().clamp_page(aloc.y, aloc.y + aloc.height)
 
     def favoritesBuildSpace( self ):
-        space = gtk.EventBox()
+        space = Gtk.EventBox()
         space.set_size_request( -1, 20 )
         space.connect( "button_release_event", self.favPopup )
         space.type = "space"
@@ -1133,15 +1138,19 @@ class pluginclass( object ):
         return space
 
     def favoritesBuildSeparator( self ):
-        separator = gtk.HSeparator()
+        separator = Gtk.HSeparator()
         #separator.add( gtk.HSeparator() )
         separator.set_size_request( -1, 20 )
-        separator.connect( "button_release_event", self.favPopup )
         separator.type = "separator"
 
         self.snowMenuWin.SetPaneColors( [ separator ] )
         separator.show_all()
-        return separator
+        box = Gtk.EventBox()
+        box.type = "separator"
+        box.add(separator)
+        box.connect( "button_release_event", self.favPopup )
+        box.show_all()
+        return box
 
     def favoritesBuildLauncher( self, location ):
         try:
@@ -1226,10 +1235,10 @@ class pluginclass( object ):
                     favButton.position = position
                     self.favorites.append( favButton )
                     self.favoritesPositionOnGrid( favButton )
-                    favButton.connect( "drag_data_received", self.onFavButtonDragReorder )
-                    favButton.drag_dest_set( gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, self.fromFav, gtk.gdk.ACTION_COPY )
-                    favButton.connect( "drag_data_get", self.onFavButtonDragReorderGet )
-                    favButton.drag_source_set( gtk.gdk.BUTTON1_MASK, self.toFav, gtk.gdk.ACTION_COPY )
+                    favButton.connect( "drag-data-received", self.onFavButtonDragReorder )
+                    gtk.gtk_drag_dest_set( hash(favButton), Gtk.DestDefaults.MOTION | Gtk.DestDefaults.HIGHLIGHT | Gtk.DestDefaults.DROP, self.fromFav, 2, Gdk.DragAction.COPY )
+                    favButton.connect( "drag-data-get", self.onFavButtonDragReorderGet )
+                    gtk.gtk_drag_source_set( hash(favButton), Gdk.ModifierType.BUTTON1_MASK, self.toFav, 3, Gdk.DragAction.COPY )
                     position += 1
 
             self.favoritesSave()
@@ -1307,10 +1316,10 @@ class pluginclass( object ):
             self.favorites.append( favButton )
             self.favoritesPositionOnGrid( favButton )
 
-            favButton.connect( "drag_data_received", self.onFavButtonDragReorder )
-            favButton.drag_dest_set( gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, self.toFav, gtk.gdk.ACTION_COPY )
-            favButton.connect( "drag_data_get", self.onFavButtonDragReorderGet )
-            favButton.drag_source_set( gtk.gdk.BUTTON1_MASK, self.toFav, gtk.gdk.ACTION_COPY )
+            favButton.connect( "drag-data-received", self.onFavButtonDragReorder )
+            gtk.gtk_drag_dest_set( hash(favButton), Gtk.DestDefaults.MOTION | Gtk.DestDefaults.HIGHLIGHT | Gtk.DestDefaults.DROP, self.toFav, 3, Gdk.DragAction.COPY )
+            favButton.connect( "drag-data-get", self.onFavButtonDragReorderGet )
+            gtk.gtk_drag_source_set ( hash(favButton), Gdk.ModifierType.BUTTON1_MASK, self.toFav, 3, Gdk.DragAction.COPY )
 
             if position >= 0:
                 self.favoritesReorder( favButton.position, position )
@@ -1347,7 +1356,7 @@ class pluginclass( object ):
 
             appListFile.close( )
         except Exception, e:
-            msgDlg = gtk.MessageDialog( None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, _("Couldn't save favorites. Check if you have write access to ~/.snowlinux/snowMenu")+"\n(" + e.__str__() + ")" )
+            msgDlg = Gtk.MessageDialog( None, gtk.DialogFlags.MODAL, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, _("Couldn't save favorites. Check if you have write access to ~/.snowlinux/snowMenu")+"\n(" + e.__str__() + ")" )
             msgDlg.run();
             msgDlg.destroy();
 
@@ -1360,18 +1369,20 @@ class pluginclass( object ):
 
     def onFavButtonDragReorderGet( self, widget, context, selection, targetType, eventTime ):
         if targetType == self.TARGET_TYPE_FAV:
+            self.drag_origin = widget.position
             selection.set( selection.target, 8, str(widget.position) )
 
     def onFavButtonDragReorder( self, widget, context, x, y, selection, targetType, time  ):
         if targetType == self.TARGET_TYPE_FAV:
-            self.favoritesReorder( int(selection.data), widget.position )
+            # self.favoritesReorder( int(selection.data), widget.position )
+            self.favoritesReorder( self.drag_origin, widget.position )
 
     def menuChanged( self, x, y ):
         # wait some miliseconds because there a multiple events send at the same time and we don't want to rebuild the menu for each
         if self.menuChangedTimer:
-            gobject.source_remove( self.menuChangedTimer )
+            GObject.source_remove( self.menuChangedTimer )
 
-        self.menuChangedTimer = gobject.timeout_add( 100, self.updateBoxes, True )
+        self.menuChangedTimer = GObject.timeout_add( 100, self.updateBoxes, True )
 
     def updateBoxes( self, menu_has_changed ):
         # FIXME: This is really bad!
@@ -1490,7 +1501,7 @@ class pluginclass( object ):
 
             for item in sortedCategoryList:
                 try:
-                    self.categoriesBox.pack_start( item[1], False )
+                    self.categoriesBox.pack_start( item[1], False, False, 0 )
                 except TypeError:
                     self.categoriesBox.pack_start(item, False)
 
@@ -1557,7 +1568,7 @@ class pluginclass( object ):
             sortedApplicationList.sort()
 
             for item in sortedApplicationList:
-                self.applicationsBox.pack_start( item[1], False )
+                self.applicationsBox.pack_start( item[1], False, False, 0 )
 
         self.rebuildLock = False
 
